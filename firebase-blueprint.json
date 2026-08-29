@@ -1,0 +1,77 @@
+{
+  "schema": {
+    "users": {
+      "type": "collection",
+      "description": "User profiles",
+      "document": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "subcollections": {
+        "prospects": {
+          "type": "collection",
+          "description": "Freelance web design prospects",
+          "document": {
+            "companyName": { "type": "string" },
+            "websiteUrl": { "type": "string" },
+            "status": { "type": "string" },
+            "leadScore": { "type": "number" },
+            "priority": { "type": "string" },
+            "nextFollowUpDate": { "type": "timestamp", "optional": true },
+            "createdAt": { "type": "timestamp" }
+          }
+        },
+        "tasks": {
+          "type": "collection",
+          "description": "Tasks and follow-ups",
+          "document": {
+            "title": { "type": "string" },
+            "prospectId": { "type": "string", "optional": true },
+            "dueDate": { "type": "timestamp" },
+            "status": { "type": "string" },
+            "priority": { "type": "string" },
+            "createdAt": { "type": "timestamp" }
+          }
+        },
+        "outreach": {
+          "type": "collection",
+          "description": "Outreach attempts",
+          "document": {
+            "prospectId": { "type": "string" },
+            "contactDate": { "type": "timestamp" },
+            "method": { "type": "string" },
+            "responseType": { "type": "string" }
+          }
+        },
+        "calls": {
+          "type": "collection",
+          "description": "Sales calls",
+          "document": {
+            "prospectId": { "type": "string" },
+            "callDate": { "type": "timestamp" },
+            "outcome": { "type": "string" }
+          }
+        },
+        "proposals": {
+          "type": "collection",
+          "description": "Sent proposals",
+          "document": {
+            "prospectId": { "type": "string" },
+            "amount": { "type": "number" },
+            "status": { "type": "string" }
+          }
+        },
+        "clients": {
+          "type": "collection",
+          "description": "Won clients",
+          "document": {
+            "prospectId": { "type": "string" },
+            "projectValue": { "type": "number" },
+            "status": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
