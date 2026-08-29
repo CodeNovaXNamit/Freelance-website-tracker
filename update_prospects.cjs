@@ -1,4 +1,6 @@
+const fs = require('fs');
 
+const content = `
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getProspects, deleteProspect } from '../lib/api';
@@ -179,9 +181,9 @@ export function Prospects() {
                     <div className="flex items-center">
                       <div>
                         <div className="font-bold text-[#141414] uppercase text-[11px] flex items-center">
-                          <Link to={`/prospects/${prospect.id}`} className="hover:underline">{prospect.companyName}</Link>
+                          <Link to={\`/prospects/\${prospect.id}\`} className="hover:underline">{prospect.companyName}</Link>
                           {prospect.websiteUrl && (
-                            <a href={`https://${prospect.websiteUrl.replace('https://', '').replace('http://', '')}`} target="_blank" rel="noreferrer" className="ml-2 text-[#141414]/50 hover:text-[#141414]">
+                            <a href={\`https://\${prospect.websiteUrl.replace('https://', '').replace('http://', '')}\`} target="_blank" rel="noreferrer" className="ml-2 text-[#141414]/50 hover:text-[#141414]">
                               <ExternalLink className="h-3 w-3" />
                             </a>
                           )}
@@ -200,7 +202,7 @@ export function Prospects() {
                       <span className="border border-[#141414] bg-[#141414]/5 px-2 py-0.5">
                         {prospect.status}
                       </span>
-                      <span className={`text-[9px] px-1 ${prospect.priority === 'High' ? 'text-red-600 font-bold' : prospect.priority === 'Medium' ? 'text-orange-600' : 'opacity-60'}`}>
+                      <span className={\`text-[9px] px-1 \${prospect.priority === 'High' ? 'text-red-600 font-bold' : prospect.priority === 'Medium' ? 'text-orange-600' : 'opacity-60'}\`}>
                         {prospect.priority} PRIORITY
                       </span>
                     </div>
@@ -209,7 +211,7 @@ export function Prospects() {
                     <div className="uppercase">{prospect.industry}</div>
                     <div className="flex items-center text-[#141414]/60 mt-0.5 text-[9px] uppercase">
                       <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-                      <span className="truncate max-w-[120px]">{prospect.city}{prospect.country ? `, ${prospect.country}` : ''}</span>
+                      <span className="truncate max-w-[120px]">{prospect.city}{prospect.country ? \`, \${prospect.country}\` : ''}</span>
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 text-[10px] text-[#141414] font-mono border-r border-[#141414]/20">
@@ -220,7 +222,7 @@ export function Prospects() {
                   </td>
                   <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-[10px] font-bold uppercase sm:pr-6">
                     <div className="flex flex-col items-end gap-2">
-                      <Link to={`/prospects/${prospect.id}`} className="text-[#141414] hover:underline bg-[#141414]/5 px-3 py-1 border border-[#141414]/20">
+                      <Link to={\`/prospects/\${prospect.id}\`} className="text-[#141414] hover:underline bg-[#141414]/5 px-3 py-1 border border-[#141414]/20">
                         OPEN
                       </Link>
                     </div>
@@ -241,3 +243,5 @@ export function Prospects() {
     </div>
   );
 }
+`;
+fs.writeFileSync('src/pages/Prospects.tsx', content);

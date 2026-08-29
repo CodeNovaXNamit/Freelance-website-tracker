@@ -1,4 +1,6 @@
+const fs = require('fs');
 
+const content = `
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getTasks, saveTask, deleteTask, getProspects } from '../lib/api';
@@ -138,7 +140,7 @@ export function FollowUps() {
     
     try {
       const newTask: Partial<Task> = {
-        title: `Follow up (completed previous: ${showNextTaskModal.title})`,
+        title: \`Follow up (completed previous: \${showNextTaskModal.title})\`,
         prospectId: showNextTaskModal.prospectId,
         dueDate: addDays(startOfToday(), days).getTime(),
         priority: showNextTaskModal.priority,
@@ -169,7 +171,7 @@ export function FollowUps() {
     if (tasks.length === 0) return null;
     return (
       <div className="mb-8">
-        <h2 className={`text-[10px] font-bold uppercase mb-4 ${colorClass}`}>
+        <h2 className={\`text-[10px] font-bold uppercase mb-4 \${colorClass}\`}>
           {title} ({tasks.length})
         </h2>
         <div className="space-y-2">
@@ -179,18 +181,18 @@ export function FollowUps() {
               <div key={task.id} className="border border-[#141414] bg-transparent p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-[#141414]/5 transition-colors">
                 <div className="mb-4 sm:mb-0">
                   <div className="flex items-center space-x-2">
-                    <span className={`text-[9px] px-1.5 py-0.5 border font-bold uppercase ${
+                    <span className={\`text-[9px] px-1.5 py-0.5 border font-bold uppercase \${
                       task.priority === 'High' ? 'border-red-600 text-red-600' : 
                       task.priority === 'Medium' ? 'border-orange-500 text-orange-600' : 
                       'border-[#141414]/50 text-[#141414]/70'
-                    }`}>
+                    }\`}>
                       {task.priority}
                     </span>
                     <h3 className="font-bold text-sm uppercase text-[#141414]">{task.title}</h3>
                   </div>
                   {prospect && (
                     <div className="mt-1 flex items-center text-[10px] font-mono text-[#141414]/70">
-                      <Link to={`/prospects/${prospect.id}`} className="hover:underline font-bold text-[#141414] mr-2">
+                      <Link to={\`/prospects/\${prospect.id}\`} className="hover:underline font-bold text-[#141414] mr-2">
                         {prospect.companyName}
                       </Link>
                       {task.method && <span className="uppercase opacity-70">via {task.method}</span>}
@@ -296,7 +298,7 @@ export function FollowUps() {
                   className="w-full border border-[#141414] bg-transparent px-3 py-2 text-[10px] font-mono focus:outline-none"
                 >
                   <option value="">-- No Prospect Attached --</option>
-                  {Object.values(prospects as Record<string, Prospect>).sort((a,b) => a.companyName.localeCompare(b.companyName)).map(p => (
+                  {Object.values(prospects).sort((a,b) => a.companyName.localeCompare(b.companyName)).map(p => (
                     <option key={p.id} value={p.id}>{p.companyName}</option>
                   ))}
                 </select>
@@ -405,3 +407,5 @@ export function FollowUps() {
     </div>
   );
 }
+`;
+fs.writeFileSync('src/pages/FollowUps.tsx', content);

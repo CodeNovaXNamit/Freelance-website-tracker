@@ -1,31 +1,33 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write only their own data
-    match /users/{userId} {
-      allow read, write: if (request.auth != null && request.auth.uid == userId) || userId == 'namit-mock-id';
-      
-      match /prospects/{document=**} {
-        allow read, write: if (request.auth != null && request.auth.uid == userId) || userId == 'namit-mock-id';
-      }
-      match /tasks/{document=**} {
-        allow read, write: if (request.auth != null && request.auth.uid == userId) || userId == 'namit-mock-id';
-      }
-      match /outreach/{document=**} {
-        allow read, write: if (request.auth != null && request.auth.uid == userId) || userId == 'namit-mock-id';
-      }
-      match /calls/{document=**} {
-        allow read, write: if (request.auth != null && request.auth.uid == userId) || userId == 'namit-mock-id';
-      }
-      match /proposals/{document=**} {
-        allow read, write: if (request.auth != null && request.auth.uid == userId) || userId == 'namit-mock-id';
-      }
-      match /clients/{document=**} {
-        allow read, write: if (request.auth != null && request.auth.uid == userId) || userId == 'namit-mock-id';
-      }
-      match /reviews/{document=**} {
-        allow read, write: if (request.auth != null && request.auth.uid == userId) || userId == 'namit-mock-id';
-      }
+    // Helper function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the document belongs to the user
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Helper to ensure userId is correctly set on create
+    function isCreatingOwn(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    // Helper to ensure userId cannot be changed on update
+    function isNotChangingOwner() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    // All documents are nested under /users/{userId}/{collectionName}/{documentId}
+    match /users/{userId}/{collectionName}/{documentId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && isOwner(userId) && isCreatingOwn(userId);
+      allow update: if isAuthenticated() && isOwner(userId) && isNotChangingOwner();
+      allow delete: if isAuthenticated() && isOwner(userId);
     }
   }
 }

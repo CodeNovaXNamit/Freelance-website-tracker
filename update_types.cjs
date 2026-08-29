@@ -1,9 +1,11 @@
+const fs = require('fs');
+
+const content = `
 export interface BaseEntity {
   id: string;
   userId: string;
   createdAt: number;
   updatedAt: number;
-  isDemo?: boolean; // For tracking sample data
 }
 
 export interface Prospect extends BaseEntity {
@@ -35,9 +37,7 @@ export interface Prospect extends BaseEntity {
   hasGoogleBusiness?: boolean;
 
   // Assessment
-  automaticScore: number;
-  manualScore?: number;
-  leadScore: number; // Effective score
+  leadScore: number;
   priority: 'High' | 'Medium' | 'Low';
   whyGoodProspect?: string;
   mainWebsiteProblem?: string;
@@ -80,21 +80,13 @@ export interface Task extends BaseEntity {
 
 export interface Call extends BaseEntity {
   prospectId: string;
-  scheduledAt: number;
+  callDate: number;
   duration?: number; // minutes
   callType: string;
   peopleInvolved?: string;
   mainRequirement?: string;
-  currentWebsite?: string;
-  desiredWebsite?: string;
-  numberOfPages?: number;
-  requiredFeatures?: string;
   budgetMentioned?: number;
-  timeline?: string;
-  decisionMaker?: string;
-  mainObjection?: string;
   outcome: string;
-  nextStep?: string;
   notes?: string;
 }
 
@@ -103,10 +95,7 @@ export interface Proposal extends BaseEntity {
   proposalDate: number;
   amount: number;
   scope?: string;
-  proposalUrl?: string;
-  expectedDecisionDate?: number;
   status: 'Draft' | 'Sent' | 'Viewed' | 'Negotiating' | 'Accepted' | 'Rejected' | 'Expired';
-  notes?: string;
 }
 
 export interface Client extends BaseEntity {
@@ -115,16 +104,8 @@ export interface Client extends BaseEntity {
   projectName: string;
   projectValue: number;
   amountPaid: number;
-  amountPending: number;
-  paymentStatus: 'Unpaid' | 'Partially Paid' | 'Paid' | 'Overdue';
-  startDate?: number;
-  expectedCompletionDate?: number;
-  projectUrl?: string;
-  projectStatus: 'Onboarding' | 'In Progress' | 'Waiting for Client' | 'Review' | 'Completed' | 'Maintenance' | 'Paused' | 'Cancelled';
-  hostingFee?: number;
-  maintenanceFee?: number;
+  status: 'Not Started' | 'In Progress' | 'Waiting for Client' | 'Review' | 'Completed' | 'Maintenance';
   monthlyRecurringRevenue?: number;
-  notes?: string;
 }
 
 export interface WebsiteAudit extends BaseEntity {
@@ -136,50 +117,11 @@ export interface WebsiteAudit extends BaseEntity {
   ctaQuality: 'Good' | 'Average' | 'Poor';
   seoBasics: 'Good' | 'Average' | 'Poor';
   contentQuality: 'Good' | 'Average' | 'Poor';
-  trustSignals: 'Good' | 'Average' | 'Poor';
-  productPresentation: 'Good' | 'Average' | 'Poor';
-  contactExperience: 'Good' | 'Average' | 'Poor';
   topProblems: string[];
   recommendedImprovements: string[];
   auditCompleted: boolean;
   auditUrl?: string;
   notes?: string;
 }
-
-export interface UserSettings extends BaseEntity {
-  dailyTargets: {
-    newProspects: number;
-    outreachAttempts: number;
-    followUps: number;
-    calls: number;
-    audits: number;
-  }
-}
-
-export interface WeeklyReview extends BaseEntity {
-  weekStartDate: number;
-  weekEndDate: number;
-  
-  // Auto-calculated stats for the week
-  prospectsAdded: number;
-  outreachAttempts: number;
-  replies: number;
-  positiveReplies: number;
-  calls: number;
-  proposals: number;
-  clients: number;
-  revenue: number;
-  
-  bestOutreachChannel?: string;
-  bestIndustry?: string;
-  bestCity?: string;
-  biggestDropOff?: string;
-
-  // Qualitative
-  whatWorked?: string;
-  whatDidNotWork?: string;
-  whatDidILearn?: string;
-  changesNextWeek?: string;
-  stopDoing?: string;
-  continueDoing?: string;
-}
+`;
+fs.writeFileSync('src/types/index.ts', content);

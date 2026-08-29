@@ -1,88 +1,155 @@
-
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getProspects } from '../lib/api';
-import { Prospect } from '../types';
+import { getEntities, saveEntity } from '../lib/api';
+import { Client, Prospect } from '../types';
+import { Loader2, Briefcase, Calendar as CalendarIcon, Link as LinkIcon, DollarSign } from 'lucide-react';
+import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
 
 export function Clients() {
   const { user } = useAuth();
-  const [data, setData] = useState<Prospect[]>([]);
+  const [clients, setClients] = useState<(Client & { companyName?: string })[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      getProspects(user.uid).then(res => {
-        const filtered = res.filter(p => p.status === 'Won');
-        setData(filtered);
-        setLoading(false);
-      });
-    }
+    if (user) loadData();
   }, [user]);
 
-  if (loading) {
+  const loadData = async () => {
+    try {
+      const uid = user!.uid;
+      const [pData, cData] = await Promise.all([
+        getEntities<Prospect>(uid, 'prospects'),
+        getEntities<Client>(uid, 'clients')
+      ]);
+      
+      const pMap: Record<string, string> = {};
+      pData.forEach(p => pMap[p.id!] = p.companyName);
+
+      const merged = cData.map(c => ({ ...c, companyName: pMap[c.prospectId] || 'Unknown Company' }));
+      setClients(merged.sort((a,b) => b.startDate - a.startDate));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (id: string, projectStatus: Client['projectStatus']) => {
+    const clientToUpdate = clients.find(c => c.id === id);
+    if (!clientToUpdate) return;
+    
+    const updated = { ...clientToUpdate, projectStatus };
+    setClients(prev => prev.map(c => c.id === id ? updated : c));
+    try {
+      await saveEntity(user!.uid, 'clients', updated);
+    } catch(e) {
+      alert("Failed to update status");
+      loadData();
+    }
+  };
+
+  if (loading) return <div className="flex h-full w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#141414]" /></div>;
+
+  const active = clients.filter(c => !['Completed', 'Cancelled'].includes(c.projectStatus));
+  const completed = clients.filter(c => ['Completed', 'Cancelled'].includes(c.projectStatus));
+
+  const renderClientCard = (c: Client & { companyName?: string }) => {
+    const progress = c.projectValue > 0 ? (c.amountPaid / c.projectValue) * 100 : 0;
+    
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#141414]" />
+      <div key={c.id} className="border border-[#141414] bg-transparent p-4 flex flex-col justify-between hover:bg-white/30 transition-colors">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-[12px] font-bold uppercase text-[#141414] mb-0.5">{c.projectName}</h3>
+            <Link to={`/prospects/${c.prospectId}`} className="text-[9px] font-mono text-[#141414]/70 hover:underline hover:text-[#141414]">
+              {c.companyName}
+            </Link>
+          </div>
+          <select 
+            value={c.projectStatus}
+            onChange={(e) => handleStatusChange(c.id!, e.target.value as any)}
+            className={`text-[9px] font-bold uppercase border border-[#141414]/20 px-2 py-1 bg-transparent focus:outline-none cursor-pointer ${
+              c.projectStatus === 'Completed' ? 'bg-[#141414] text-[#E4E3E0]' : 
+              c.projectStatus === 'Cancelled' ? 'bg-red-100 text-red-800' : 'text-[#141414]'
+            }`}
+          >
+            <option value="Onboarding">Onboarding</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Review">Review</option>
+            <option value="Completed">Completed</option>
+            <option value="Paused">Paused</option>
+            <option value='Cancelled' as any>Cancelled</option>
+          </select>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <div className="text-[9px] font-bold uppercase text-[#141414]/50 mb-1">Total Value</div>
+            <div className="text-[14px] font-bold tracking-tighter">${c.projectValue.toLocaleString()}</div>
+          </div>
+          <div>
+            <div className="text-[9px] font-bold uppercase text-[#141414]/50 mb-1">Amount Paid</div>
+            <div className="text-[14px] font-bold tracking-tighter text-green-700">${c.amountPaid.toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div className="w-full bg-[#141414]/10 h-1.5 mb-4 relative">
+          <div className="absolute top-0 left-0 h-full bg-[#141414]" style={{ width: `${progress}%` }}></div>
+        </div>
+
+        <div className="flex justify-between items-center text-[9px] font-mono text-[#141414]/60">
+          <span className="flex items-center"><CalendarIcon className="w-2.5 h-2.5 mr-1"/> Started: {format(c.startDate, 'MMM d, yyyy')}</span>
+          {(c as any).projectUrl && (
+            <a href={(c as any).projectUrl.startsWith('http') ? (c as any).projectUrl : `https://${(c as any).projectUrl}`} target="_blank" rel="noreferrer" className="flex items-center hover:text-[#141414] hover:underline">
+              <LinkIcon className="w-2.5 h-2.5 mr-1" /> View Link
+            </a>
+          )}
+        </div>
       </div>
     );
-  }
+  };
 
   return (
-    <div className="p-8 flex flex-col gap-6 h-full">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full flex-col">
+      <div className="border-b border-[#141414] bg-[#E4E3E0] px-8 py-6 sticky top-0 z-10 flex-shrink-0 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold uppercase tracking-tighter text-[#141414]">Active Clients</h1>
-          <p className="mt-1 text-[10px] uppercase font-bold opacity-50 tracking-widest text-[#141414]">Converted prospects and current clients.</p>
+          <h1 className="text-2xl font-bold uppercase tracking-tighter text-[#141414] flex items-center">
+            <Briefcase className="w-5 h-5 mr-3" /> Clients & Projects
+          </h1>
+          <p className="text-[10px] font-mono uppercase text-[#141414]/60 mt-1">Manage active engagements and project statuses</p>
         </div>
       </div>
 
-      <div className="border border-[#141414] overflow-hidden bg-transparent flex-1 flex flex-col">
-        <div className="flex-1 overflow-auto">
-          <table className="min-w-full divide-y divide-[#141414]">
-            <thead className="bg-[#141414]/5 sticky top-0">
-              <tr>
-                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-[10px] font-bold uppercase text-[#141414] sm:pl-6 border-r border-[#141414]/20">Company</th>
-                <th scope="col" className="px-3 py-3.5 text-left text-[10px] font-bold uppercase text-[#141414] border-r border-[#141414]/20">Status</th>
-                <th scope="col" className="px-3 py-3.5 text-left text-[10px] font-bold uppercase text-[#141414] border-r border-[#141414]/20">Priority</th>
-                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#141414]/20 bg-transparent">
-              {data.map((item) => (
-                <tr key={item.id} className="hover:bg-[#141414]/10 transition-colors">
-                  <td className="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6 border-r border-[#141414]/20">
-                    <div className="font-bold text-[#141414] uppercase text-xs">
-                      {item.companyName}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-[10px] font-bold uppercase text-[#141414] border-r border-[#141414]/20">
-                    <span className="border border-[#141414] px-2 py-0.5 opacity-80">
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-[10px] text-[#141414] font-mono border-r border-[#141414]/20">
-                    <span className="font-bold uppercase opacity-70">{item.priority}</span>
-                  </td>
-                  <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-[10px] font-bold uppercase sm:pr-6">
-                    <Link to={`/prospects/${item.id}`} className="text-[#141414] hover:underline">
-                      [ View ]
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {data.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-[10px] font-bold uppercase text-[#141414]/50">
-                    NO ACTIVE CLIENTS YET.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      <div className="flex-1 overflow-y-auto p-8 bg-[#E4E3E0]">
+        <div className="max-w-7xl mx-auto space-y-8">
+          
+          <div>
+            <h2 className="text-[12px] font-bold uppercase text-[#141414] mb-4 border-b border-[#141414]/20 pb-2">Active Projects ({active.length})</h2>
+            {active.length === 0 ? (
+              <div className="text-center text-[10px] font-mono uppercase text-[#141414]/50 py-8 border border-[#141414]/20 border-dashed">
+                No active projects.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {active.map(renderClientCard)}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h2 className="text-[12px] font-bold uppercase text-[#141414] mb-4 border-b border-[#141414]/20 pb-2">Completed / Archived ({completed.length})</h2>
+             {completed.length === 0 ? (
+              <div className="text-center text-[10px] font-mono uppercase text-[#141414]/50 py-8 border border-[#141414]/20 border-dashed">
+                No completed projects.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {completed.map(renderClientCard)}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </div>

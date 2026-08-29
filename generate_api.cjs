@@ -1,12 +1,14 @@
-import { collection, doc, getDoc, getDocs, setDoc, query, where, orderBy, deleteDoc, writeBatch } from 'firebase/firestore';
+const fs = require('fs');
+
+const content = `import { collection, doc, getDoc, getDocs, setDoc, query, where, orderBy, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Prospect, Outreach, Call, Proposal, Client, Task, WebsiteAudit, UserSettings, WeeklyReview, BaseEntity } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 // GENERIC CRUD HELPERS
-const getCollectionPath = (userId: string, entityType: string) => `users/${userId}/${entityType}`;
+const getCollectionPath = (userId: string, entityType: string) => \`users/\${userId}/\${entityType}\`;
 
-export async function getEntities<T extends BaseEntity>(userId: string, entityType: string): Promise<T[]> {
+async function getEntities<T extends BaseEntity>(userId: string, entityType: string): Promise<T[]> {
   const q = query(collection(db, getCollectionPath(userId, entityType)), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => doc.data() as T);
@@ -19,13 +21,13 @@ async function getEntityById<T extends BaseEntity>(userId: string, entityType: s
   return null;
 }
 
-export async function getEntitiesByProspectId<T extends BaseEntity>(userId: string, entityType: string, prospectId: string): Promise<T[]> {
+async function getEntitiesByProspectId<T extends BaseEntity>(userId: string, entityType: string, prospectId: string): Promise<T[]> {
   const q = query(collection(db, getCollectionPath(userId, entityType)), where('prospectId', '==', prospectId), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => doc.data() as T);
 }
 
-export async function saveEntity<T extends BaseEntity>(userId: string, entityType: string, entity: Partial<T>): Promise<T> {
+async function saveEntity<T extends BaseEntity>(userId: string, entityType: string, entity: Partial<T>): Promise<T> {
   const isNew = !entity.id;
   const id = entity.id || uuidv4();
   const now = Date.now();
@@ -98,7 +100,7 @@ export const deleteWebsiteAudit = (userId: string, id: string) => deleteEntity(u
 
 // USER SETTINGS
 export const getUserSettings = async (userId: string): Promise<UserSettings | null> => {
-  const snapshot = await getDoc(doc(db, `users/${userId}/settings/profile`));
+  const snapshot = await getDoc(doc(db, \`users/\${userId}/settings/profile\`));
   if (snapshot.exists()) return snapshot.data() as UserSettings;
   return null;
 };
@@ -110,7 +112,7 @@ export const saveUserSettings = async (userId: string, settings: Partial<UserSet
     createdAt: settings.createdAt || Date.now(),
     updatedAt: Date.now(),
   } as UserSettings;
-  await setDoc(doc(db, `users/${userId}/settings/profile`), fullSettings);
+  await setDoc(doc(db, \`users/\${userId}/settings/profile\`), fullSettings);
   return fullSettings;
 };
 
@@ -145,38 +147,6 @@ export const exportUserData = async (userId: string) => {
     settings
   };
 };
+`;
 
-// STATS
-export const getDashboardStats = async (userId: string) => {
-  const prospectsRef = collection(db, `users/${userId}/prospects`);
-  const prospectsSnap = await getDocs(prospectsRef);
-  
-  let totalProspects = 0;
-  let contacted = 0;
-  let replies = 0;
-  let proposals = 0;
-  let won = 0;
-
-  prospectsSnap.forEach(doc => {
-    const data = doc.data() as Prospect;
-    totalProspects++;
-    if (['Contacted', 'Replied', 'Interested', 'Call Scheduled', 'Call Completed', 'Proposal Sent', 'Negotiation', 'Won', 'Lost', 'Not Interested'].includes(data.status)) contacted++;
-    if (['Replied', 'Interested', 'Call Scheduled', 'Call Completed', 'Proposal Sent', 'Negotiation', 'Won', 'Lost'].includes(data.status)) replies++;
-    if (['Proposal Sent', 'Negotiation', 'Won', 'Lost'].includes(data.status)) proposals++;
-    if (data.status === 'Won') won++;
-  });
-
-  return {
-    totalProspects,
-    contacted,
-    replies,
-    proposals,
-    won
-  };
-};
-
-export const seedSampleData = async (userId: string) => {
-  // Placeholder implementation for testing
-};
-
-
+fs.writeFileSync('src/lib/api.ts', content);

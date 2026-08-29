@@ -1,3 +1,4 @@
+import React from "react";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,10 +11,10 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Prospects } from './pages/Prospects';
 import { ProspectDetail } from './pages/ProspectDetail';
-import { FollowUps } from './pages/FollowUps';
 import { Calls } from './pages/Calls';
 import { Proposals } from './pages/Proposals';
 import { Clients } from './pages/Clients';
+import { FollowUps } from './pages/FollowUps';
 import { Revenue } from './pages/Revenue';
 import { Analytics } from './pages/Analytics';
 import { Review } from './pages/Review';
